@@ -22,13 +22,14 @@ public sealed class AitkenInterpolator : InterpolatorBase
 
     // ── Core computation ───────────────────────────────────────────────
     /// <inheritdoc/>
-    public override double Compute(double[] xs, double[] ys, double x)
+    public override double Compute(double[] xs, double[] ys, double x) =>
+        Evaluate(xs, ys, x);
+
+    private static double Evaluate(double[] xs, double[] ys, double x)
     {
         int n = xs.Length;
         if (n == 1)
-        {
             return ys[0];
-        }
 
         // Work array, initially a copy of y values (level 0 of Aitken table)
         double[] table = (double[])ys.Clone();

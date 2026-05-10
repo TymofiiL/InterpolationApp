@@ -36,6 +36,7 @@ public sealed partial class NodeItem : ObservableObject
     /// Attempts to parse both text fields as doubles.
     /// Returns false and sets x/y to 0 when parsing fails.
     /// </summary>
+#pragma warning disable S2325 // False positive: accesses XText/YText which are source-generated instance properties
     public bool TryGetValues(out double x, out double y)
     {
         x = 0; y = 0;
@@ -53,4 +54,5 @@ public sealed partial class NodeItem : ObservableObject
         }
         return ok;
     }
+#pragma warning restore S2325
 }

@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Detect .NET 8+ SDK so net8 targets are only added when the SDK supports them -->
-    <_Net8Sdk>$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '8.0.0'))</_Net8Sdk>
-    <_MacTfms>net7.0-maccatalyst</_MacTfms>
-    <_MacTfms Condition="'$(_Net8Sdk)' == 'true'">$(_MacTfms);net8.0-maccatalyst</_MacTfms>
-    <_WinTfms>net7.0-windows10.0.19041.0</_WinTfms>
-    <_WinTfms Condition="'$(_Net8Sdk)' == 'true'">$(_WinTfms);net8.0-windows10.0.19041.0</_WinTfms>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(_WinTfms)</TargetFrameworks>
-    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows'))">$(_MacTfms)</TargetFrameworks>
+    <!-- Each condition is self-contained (no property accumulation) so the IDE evaluator
+         can read the value directly. Conditions are mutually exclusive per SDK version. -->
+    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows')) And $([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '9.0.0'))">net9.0-maccatalyst;net8.0-maccatalyst;net7.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows')) And $([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '8.0.0')) And !$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '9.0.0'))">net8.0-maccatalyst;net7.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows')) And !$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '8.0.0'))">net7.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows')) And $([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '9.0.0'))">net9.0-windows10.0.19041.0;net8.0-windows10.0.19041.0;net7.0-windows10.0.19041.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows')) And $([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '8.0.0')) And !$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '9.0.0'))">net8.0-windows10.0.19041.0;net7.0-windows10.0.19041.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows')) And !$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '8.0.0'))">net7.0-windows10.0.19041.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <RootNamespace>InterpolationApp</RootNamespace>
     <UseMaui>true</UseMaui>
@@ -38,12 +38,17 @@
     <CodesignEntitlements>Platforms/MacCatalyst/Entitlements.plist</CodesignEntitlements>
   </PropertyGroup>
 
-  <!-- CommunityToolkit.Maui is versioned per MAUI/.NET release -->
+  <!-- CommunityToolkit.Maui is versioned per MAUI/.NET release.
+       Microsoft.Maui.Controls must be explicit for .NET 8+ (UseMaui no longer adds it implicitly). -->
   <ItemGroup Condition="$(TargetFramework.StartsWith('net7.'))">
     <PackageReference Include="CommunityToolkit.Maui" Version="5.3.0" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net8.'))">
+    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
     <PackageReference Include="CommunityToolkit.Maui" Version="8.0.1" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net9.'))">
+    <PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />

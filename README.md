@@ -4,7 +4,7 @@
 КПІ ім. Ігоря Сікорського · Кафедра ІПІ · 2026
 
 Програмний продукт реалізує три методи поліноміальної інтерполяції з графічним
-інтерфейсом на базі **.NET 7 MAUI** (Windows та macOS).
+інтерфейсом на базі **.NET 7 / 8 / 9 MAUI** (Windows та macOS).
 
 ---
 
@@ -22,10 +22,10 @@
 
 ### Спільні для всіх платформ
 
-| Компонент     | Версія              |
-| ------------- | ------------------- |
-| .NET SDK      | **7.0** або новіший |
-| MAUI Workload | встановлений        |
+| Компонент     | Версія                          |
+| ------------- | ------------------------------- |
+| .NET SDK      | **7.0**, **8.0** або **9.0**    |
+| MAUI Workload | встановлений                    |
 
 ### Windows
 
@@ -64,10 +64,11 @@ sudo dotnet workload install maui
 Проєкт автоматично визначає версію встановленого .NET SDK і додає відповідні
 цільові платформи:
 
-| Встановлений SDK | Доступні цільові платформи                         |
-| ---------------- | -------------------------------------------------- |
-| .NET 7           | `net7.0-maccatalyst`, `net7.0-windows10.0.19041.0` |
-| .NET 8+          | обидві платформи net7 **та** net8                  |
+| Встановлений SDK | Доступні цільові платформи                                      |
+| ---------------- | --------------------------------------------------------------- |
+| .NET 7           | `net7.0-maccatalyst`, `net7.0-windows10.0.19041.0`             |
+| .NET 8           | усі net7 **та** `net8.0-maccatalyst`, `net8.0-windows…`        |
+| .NET 9           | усі net7/8 **та** `net9.0-maccatalyst`, `net9.0-windows…`      |
 
 Оскільки проєкт може містити кілька Mac-цілей, прапорець `-f` є обов'язковим.
 
@@ -87,6 +88,9 @@ dotnet run -f net7.0-windows10.0.19041.0
 
 # .NET 8 SDK
 dotnet run -f net8.0-windows10.0.19041.0
+
+# .NET 9 SDK
+dotnet run -f net9.0-windows10.0.19041.0
 ```
 
 Або відкрити рішення у **Visual Studio 2022** і натиснути **F5**.
@@ -101,6 +105,10 @@ open bin/Debug/net7.0-maccatalyst/InterpolationApp.app
 # .NET 8 SDK
 dotnet build -f net8.0-maccatalyst
 open bin/Debug/net8.0-maccatalyst/InterpolationApp.app
+
+# .NET 9 SDK
+dotnet build -f net9.0-maccatalyst
+open bin/Debug/net9.0-maccatalyst/InterpolationApp.app
 ```
 
 > На macOS застосунок підписується ad-hoc (без облікового запису Apple Developer),
