@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:InterpolationApp.ViewModels"
+             xmlns:conv="clr-namespace:InterpolationApp.Converters"
+             x:Class="InterpolationApp.Views.ComplexityPage"
+             x:DataType="vm:ComplexityViewModel"
+             Title="Складність">
+
+    <ContentPage.Resources>
+        <conv:InvertBoolConverter x:Key="InvertBool" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="12,8">
+
+        <!-- ── Controls bar ───────────────────────────────────────── -->
+        <Border Grid.Row="0" Style="{StaticResource Card}" Margin="0,0,0,8">
+            <VerticalStackLayout Spacing="8">
+
+                <Label Text="Аналіз обчислювальної складності"
+                       Style="{StaticResource SectionLabel}" />
+                <Label Text="Вимірюється середній час виконання кожного методу (100 повторень) для n = 5, 10, …, 100 вузлів."
+                       Style="{StaticResource MutedLabel}" />
+
+                <FlexLayout Wrap="Wrap" Direction="Row">
+                    <Button Text="▶  Розпочати аналіз"
+                            Command="{Binding StartAnalysisCommand}"
+                            Style="{StaticResource PrimaryBtn}"
+                            IsEnabled="{Binding IsRunning, Converter={StaticResource InvertBool}}"
+                            Margin="0,0,8,4" />
+                    <Button Text="✕ Скасувати"
+                            Command="{Binding CancelAnalysisCommand}"
+                            Style="{StaticResource DangerBtn}"
+                            IsVisible="{Binding IsRunning}"
+                            Padding="12,8"
+                            Margin="0,0,8,4" />
+                    <ActivityIndicator IsRunning="{Binding IsRunning}"
+                                      IsVisible="{Binding IsRunning}"
+                                      Color="{StaticResource Primary}"
+                                      Margin="0,0,8,4" />
+                    <Button Text="💾 Зберегти SVG"
+                            Command="{Binding SaveSvgCommand}"
+                            Style="{StaticResource SecondaryBtn}"
+                            Margin="0,0,0,4" />
+                </FlexLayout>
+
+                <!-- Progress bar -->
+                <ProgressBar Progress="{Binding Progress}"
+                             IsVisible="{Binding IsRunning}"
+                             ProgressColor="{StaticResource Primary}" />
+
+                <Label Text="{Binding StatusMessage}" Style="{StaticResource BodyLabel}" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- ── Chart + table split ────────────────────────────────── -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="8">
+
+                <!-- Chart -->
+                <Border Style="{StaticResource Card}" Padding="0">
+                    <GraphicsView x:Name="ComplexityChartView"
+                                  Drawable="{Binding Drawable}"
+                                  BackgroundColor="White"
+                                  HeightRequest="350" />
+                </Border>
+
+                <!-- Results table -->
+                <Border Style="{StaticResource Card}">
+                    <Grid RowDefinitions="Auto,Auto,Auto">
+                        <Label Grid.Row="0"
+                               Text="Результати вимірювань (мкс)"
+                               Style="{StaticResource SectionLabel}" />
+
+                        <!-- Header -->
+                        <Grid Grid.Row="1" ColumnDefinitions="80,*,*,*"
+                              BackgroundColor="{StaticResource Primary}" Padding="8,4">
+                            <Label Grid.Column="0" Text="n"              TextColor="White" FontAttributes="Bold" FontSize="12"/>
+                            <Label Grid.Column="1" Text="Лагранж"        TextColor="White" FontAttributes="Bold" FontSize="12" HorizontalTextAlignment="Center"/>
+                            <Label Grid.Column="2" Text="Барицентричний" TextColor="White" FontAttributes="Bold" FontSize="12" HorizontalTextAlignment="Center"/>
+                            <Label Grid.Column="3" Text="Ейткен"         TextColor="White" FontAttributes="Bold" FontSize="12" HorizontalTextAlignment="Center"/>
+                        </Grid>
+
+                        <CollectionView Grid.Row="2" ItemsSource="{Binding Rows}" SelectionMode="None"
+                                        HeightRequest="160">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ComplexityRow">
+                                    <Grid ColumnDefinitions="80,*,*,*" Padding="8,5">
+                                        <Label Grid.Column="0" Text="{Binding N}"
+                                               FontAttributes="Bold" Style="{StaticResource BodyLabel}"/>
+                                        <Label Grid.Column="1" Text="{Binding LagrangeUs}"
+                                               HorizontalTextAlignment="Center"
+                                               Style="{StaticResource BodyLabel}" FontFamily="Courier New"/>
+                                        <Label Grid.Column="2" Text="{Binding BarycentricUs}"
+                                               HorizontalTextAlignment="Center"
+                                               Style="{StaticResource BodyLabel}" FontFamily="Courier New"/>
+                                        <Label Grid.Column="3" Text="{Binding AitkenUs}"
+                                               HorizontalTextAlignment="Center"
+                                               Style="{StaticResource BodyLabel}" FontFamily="Courier New"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Grid>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ── Footer ─────────────────────────────────────────────── -->
+        <Label Grid.Row="2"
+               Text="Лагранж і Ейткен: O(n²) · Барицентричний після ініціалізації: O(n)"
+               Style="{StaticResource MutedLabel}"
+               HorizontalTextAlignment="Center"
+               Margin="0,4,0,0" />
+    </Grid>
+
+</ContentPage>

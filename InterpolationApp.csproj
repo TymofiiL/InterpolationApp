@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Detect .NET 8+ SDK so net8 targets are only added when the SDK supports them -->
+    <_Net8Sdk>$([MSBuild]::VersionGreaterThanOrEquals('$(NETCoreSdkVersion)', '8.0.0'))</_Net8Sdk>
+    <_MacTfms>net7.0-maccatalyst</_MacTfms>
+    <_MacTfms Condition="'$(_Net8Sdk)' == 'true'">$(_MacTfms);net8.0-maccatalyst</_MacTfms>
+    <_WinTfms>net7.0-windows10.0.19041.0</_WinTfms>
+    <_WinTfms Condition="'$(_Net8Sdk)' == 'true'">$(_WinTfms);net8.0-windows10.0.19041.0</_WinTfms>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(_WinTfms)</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows'))">$(_MacTfms)</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>InterpolationApp</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <ApplicationTitle>InterpolationApp</ApplicationTitle>
+    <ApplicationId>com.kpi.interpolation</ApplicationId>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+  </PropertyGroup>
+
+  <!-- Windows-only settings -->
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <WindowsPackageType>None</WindowsPackageType>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <!-- macOS (Mac Catalyst) settings -->
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+    <SupportedOSPlatformVersion>13.3</SupportedOSPlatformVersion>
+    <!-- Ad-hoc signing for local development (no Apple Developer account needed) -->
+    <EnableCodeSigning>false</EnableCodeSigning>
+    <CodesignKey>-</CodesignKey>
+    <CodesignEntitlements>Platforms/MacCatalyst/Entitlements.plist</CodesignEntitlements>
+  </PropertyGroup>
+
+  <!-- CommunityToolkit.Maui is versioned per MAUI/.NET release -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net7.'))">
+    <PackageReference Include="CommunityToolkit.Maui" Version="5.3.0" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net8.'))">
+    <PackageReference Include="CommunityToolkit.Maui" Version="8.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources/AppIcon/appicon.png" Color="#1565C0" />
+    <MauiSplashScreen Include="Resources/Splash/splash.png"
+                      Color="#1565C0" BaseSize="128,128" />
+    <MauiFont Include="Resources/Fonts/*" />
+    <MauiImage Include="Resources/Images/*" />
+    <MauiXaml Update="Platforms/Windows/App.xaml" />
+  </ItemGroup>
+
+  <!-- Mac Catalyst icon workaround:
+       MAUI 7.0.101 passes an unknown platform to actool so Assets.car is never produced.
+       Bypass by copying AppIcon.icns into the bundle and writing CFBundleIconFile via PlistBuddy.
+  -->
+  <Target Name="InjectMacIconFile" AfterTargets="Build"
+          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+    <PropertyGroup>
+      <_AppBundle>$([System.IO.Path]::GetFullPath('$(OutputPath)'))$(AssemblyName).app</_AppBundle>
+      <_InfoPlist>$(_AppBundle)/Contents/Info.plist</_InfoPlist>
+      <_IconSrc>$(MSBuildProjectDirectory)/Platforms/MacCatalyst/AppIcon.icns</_IconSrc>
+      <_IconDst>$(_AppBundle)/Contents/Resources/AppIcon.icns</_IconDst>
+    </PropertyGroup>
+    <Copy SourceFiles="$(_IconSrc)" DestinationFiles="$(_IconDst)"
+          Condition="Exists('$(_IconSrc)') And Exists('$(_AppBundle)')" />
+    <!-- Add the key (fails silently if it already exists) -->
+    <Exec Command="/usr/libexec/PlistBuddy -c &quot;Add :CFBundleIconFile string AppIcon&quot; &quot;$(_InfoPlist)&quot;"
+          IgnoreExitCode="true" Condition="Exists('$(_InfoPlist)')" />
+    <!-- Always set the value so a rebuild updates it too -->
+    <Exec Command="/usr/libexec/PlistBuddy -c &quot;Set :CFBundleIconFile AppIcon&quot; &quot;$(_InfoPlist)&quot;"
+          IgnoreExitCode="true" Condition="Exists('$(_InfoPlist)')" />
+  </Target>
+
+</Project>

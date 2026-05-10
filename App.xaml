@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="InterpolationApp.App">
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <!-- ── Colour palette ──────────────────────────────── -->
+            <Color x:Key="Primary">#1565C0</Color>
+            <Color x:Key="PrimaryLight">#42A5F5</Color>
+            <Color x:Key="PrimaryDark">#0D47A1</Color>
+            <Color x:Key="Accent">#FF6F00</Color>
+            <Color x:Key="Background">#F5F7FA</Color>
+            <Color x:Key="Surface">#FFFFFF</Color>
+            <Color x:Key="Error">#D32F2F</Color>
+            <Color x:Key="OnPrimary">#FFFFFF</Color>
+            <Color x:Key="OnSurface">#212121</Color>
+            <Color x:Key="Muted">#757575</Color>
+            <Color x:Key="Divider">#E0E0E0</Color>
+
+            <!-- ── Global defaults ─────────────────────────────── -->
+            <Style TargetType="ContentPage" ApplyToDerivedTypes="True">
+                <Setter Property="BackgroundColor" Value="{StaticResource Background}" />
+            </Style>
+
+            <!-- Buttons -->
+            <Style x:Key="PrimaryBtn" TargetType="Button">
+                <Setter Property="BackgroundColor"  Value="{StaticResource Primary}" />
+                <Setter Property="TextColor"        Value="{StaticResource OnPrimary}" />
+                <Setter Property="CornerRadius"     Value="6" />
+                <Setter Property="FontAttributes"   Value="Bold" />
+                <Setter Property="Padding"          Value="14,8" />
+                <Setter Property="FontSize"         Value="13" />
+            </Style>
+
+            <Style x:Key="SecondaryBtn" TargetType="Button">
+                <Setter Property="BackgroundColor"  Value="{StaticResource PrimaryLight}" />
+                <Setter Property="TextColor"        Value="{StaticResource OnPrimary}" />
+                <Setter Property="CornerRadius"     Value="6" />
+                <Setter Property="Padding"          Value="12,6" />
+                <Setter Property="FontSize"         Value="12" />
+            </Style>
+
+            <Style x:Key="DangerBtn" TargetType="Button">
+                <Setter Property="BackgroundColor"  Value="{StaticResource Error}" />
+                <Setter Property="TextColor"        Value="White" />
+                <Setter Property="CornerRadius"     Value="4" />
+                <Setter Property="Padding"          Value="0" />
+                <Setter Property="FontSize"         Value="11" />
+                <Setter Property="FontAttributes"   Value="Bold" />
+            </Style>
+
+            <!-- Labels -->
+            <Style x:Key="SectionLabel" TargetType="Label">
+                <Setter Property="FontAttributes"   Value="Bold" />
+                <Setter Property="FontSize"         Value="14" />
+                <Setter Property="TextColor"        Value="{StaticResource Primary}" />
+                <Setter Property="Margin"           Value="0,8,0,4" />
+            </Style>
+
+            <Style x:Key="BodyLabel" TargetType="Label">
+                <Setter Property="FontSize"         Value="13" />
+                <Setter Property="TextColor"        Value="{StaticResource OnSurface}" />
+            </Style>
+
+            <Style x:Key="MutedLabel" TargetType="Label">
+                <Setter Property="FontSize"         Value="11" />
+                <Setter Property="TextColor"        Value="{StaticResource Muted}" />
+            </Style>
+
+            <!-- Entries -->
+            <Style TargetType="Entry">
+                <Setter Property="BackgroundColor"  Value="White" />
+                <Setter Property="TextColor"        Value="{StaticResource OnSurface}" />
+                <Setter Property="FontSize"         Value="13" />
+                <Setter Property="Margin"           Value="0,1" />
+            </Style>
+
+            <!-- Card surface -->
+            <Style x:Key="Card" TargetType="Border">
+                <Setter Property="BackgroundColor"  Value="{StaticResource Surface}" />
+                <Setter Property="StrokeThickness"  Value="1" />
+                <Setter Property="Stroke"           Value="{StaticResource Divider}" />
+                <Setter Property="StrokeShape">
+                    <Setter.Value>
+                        <RoundRectangle CornerRadius="8" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Padding"          Value="12" />
+                <Setter Property="Margin"           Value="0,4" />
+            </Style>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

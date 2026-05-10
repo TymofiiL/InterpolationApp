@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:InterpolationApp.ViewModels"
+             xmlns:controls="clr-namespace:InterpolationApp.Controls"
+             xmlns:conv="clr-namespace:InterpolationApp.Converters"
+             x:Class="InterpolationApp.Views.GraphPage"
+             x:DataType="vm:GraphViewModel"
+             Title="Графік">
+
+    <ContentPage.Resources>
+        <conv:StringNotEmptyConverter x:Key="NotEmpty" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="12,8">
+
+        <!-- ── Toolbar ────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Style="{StaticResource Card}" Margin="0,0,0,8">
+            <VerticalStackLayout Spacing="8">
+
+                <!-- Range & points -->
+                <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*" ColumnSpacing="6"
+                      VerticalOptions="Center">
+                    <Label Grid.Column="0" Text="a =" VerticalOptions="Center"
+                           Style="{StaticResource BodyLabel}" />
+                    <Entry Grid.Column="1" Text="{Binding RangeA}" Keyboard="Numeric" />
+
+                    <Label Grid.Column="2" Text="b =" VerticalOptions="Center"
+                           Style="{StaticResource BodyLabel}" />
+                    <Entry Grid.Column="3" Text="{Binding RangeB}" Keyboard="Numeric" />
+
+                    <Label Grid.Column="4" Text="Точок:" VerticalOptions="Center"
+                           Style="{StaticResource BodyLabel}" />
+                    <Entry Grid.Column="5" Text="{Binding NumPts}" Keyboard="Numeric" />
+                </Grid>
+
+                <!-- Method checkboxes -->
+                <FlexLayout Wrap="Wrap" Direction="Row">
+                    <HorizontalStackLayout Spacing="4" Margin="0,0,16,4">
+                        <CheckBox IsChecked="{Binding UseLagrange}" Color="{StaticResource Primary}" />
+                        <Label Text="Лагранж" VerticalOptions="Center" Style="{StaticResource BodyLabel}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="4" Margin="0,0,16,4">
+                        <CheckBox IsChecked="{Binding UseBarycentric}" Color="#D32F2F" />
+                        <Label Text="Барицентричний" VerticalOptions="Center" Style="{StaticResource BodyLabel}" />
+                    </HorizontalStackLayout>
+                    <HorizontalStackLayout Spacing="4" Margin="0,0,0,4">
+                        <CheckBox IsChecked="{Binding UseAitken}" Color="#2E7D32" />
+                        <Label Text="Ейткен" VerticalOptions="Center" Style="{StaticResource BodyLabel}" />
+                    </HorizontalStackLayout>
+                </FlexLayout>
+
+                <!-- Action buttons -->
+                <FlexLayout Wrap="Wrap" Direction="Row">
+                    <Button Text="▶  Побудувати"
+                            Command="{Binding PlotCommand}"
+                            Style="{StaticResource PrimaryBtn}"
+                            Margin="0,0,8,4" />
+                    <Button Text="＋" Command="{Binding ZoomInCommand}"
+                            Style="{StaticResource SecondaryBtn}"
+                            WidthRequest="40" ToolTipProperties.Text="Збільшити"
+                            Margin="0,0,8,4" />
+                    <Button Text="－" Command="{Binding ZoomOutCommand}"
+                            Style="{StaticResource SecondaryBtn}"
+                            WidthRequest="40" ToolTipProperties.Text="Зменшити"
+                            Margin="0,0,8,4" />
+                    <Button Text="↺" Command="{Binding ResetZoomCommand}"
+                            Style="{StaticResource SecondaryBtn}"
+                            WidthRequest="40" ToolTipProperties.Text="Скинути вид"
+                            Margin="0,0,8,4" />
+                    <Button Text="💾 Зберегти SVG"
+                            Command="{Binding SaveSvgCommand}"
+                            Style="{StaticResource SecondaryBtn}"
+                            Margin="0,0,0,4" />
+                </FlexLayout>
+
+                <!-- Status -->
+                <Label Text="{Binding StatusMessage}"
+                       Style="{StaticResource MutedLabel}"
+                       IsVisible="{Binding StatusMessage, Converter={StaticResource NotEmpty}}" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- ── Chart canvas ───────────────────────────────────────── -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
+            <GraphicsView x:Name="ChartView"
+                          Drawable="{Binding Drawable}"
+                          BackgroundColor="White" />
+        </Border>
+
+        <!-- ── Footer ─────────────────────────────────────────────── -->
+        <Label Grid.Row="2"
+               Text="Вузли відображено помаранчевими точками. SVG зберігається у вибраному місці."
+               Style="{StaticResource MutedLabel}"
+               HorizontalTextAlignment="Center"
+               Margin="0,4,0,0" />
+    </Grid>
+
+</ContentPage>

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:InterpolationApp.ViewModels"
+             xmlns:models="clr-namespace:InterpolationApp.Models"
+             xmlns:conv="clr-namespace:InterpolationApp.Converters"
+             x:Class="InterpolationApp.Views.ComputePage"
+             x:DataType="vm:ComputeViewModel"
+             Title="Обчислення">
+
+    <ContentPage.Resources>
+        <conv:InvertBoolConverter     x:Key="InvertBool" />
+        <conv:StringNotEmptyConverter x:Key="NotEmpty"   />
+        <conv:IntNotZeroConverter     x:Key="NotZero"    />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,*,Auto" Padding="12,8">
+
+        <!-- ── Header ─────────────────────────────────────────────── -->
+        <VerticalStackLayout Grid.Row="0" Spacing="2" Margin="0,0,0,8">
+            <Label Text="Розв'язання задач інтерполяції"
+                   FontSize="18" FontAttributes="Bold"
+                   TextColor="{StaticResource Primary}" />
+            <Label Text="Метод Лагранжа · Барицентричний · Схема Ейткена"
+                   Style="{StaticResource MutedLabel}" />
+        </VerticalStackLayout>
+
+        <!-- ── Main scroll area ───────────────────────────────────── -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="6">
+
+                <!-- ─ Nodes card ─────────────────────────────────── -->
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="6">
+
+                        <Label Text="Вузли інтерполяції (x_i, y_i)"
+                               Style="{StaticResource SectionLabel}" />
+
+                        <!-- Column header row -->
+                        <Grid ColumnDefinitions="*,*,40" ColumnSpacing="4">
+                            <Label Grid.Column="0" Text="x_i" Style="{StaticResource MutedLabel}"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Grid.Column="1" Text="y_i = f(x_i)" Style="{StaticResource MutedLabel}"
+                                   HorizontalTextAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Editable node rows -->
+                        <CollectionView ItemsSource="{Binding Nodes}"
+                                        SelectionMode="None"
+                                        HeightRequest="240">
+                            <CollectionView.EmptyView>
+                                <Label Text="Додайте вузли кнопкою «+ Вузол» нижче."
+                                       Style="{StaticResource MutedLabel}"
+                                       HorizontalTextAlignment="Center"
+                                       Margin="0,20"/>
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:NodeItem">
+                                    <Grid ColumnDefinitions="*,*,40" ColumnSpacing="4" Margin="0,2">
+                                        <Entry Grid.Column="0"
+                                               Text="{Binding XText}"
+                                               Placeholder="x"
+                                               Keyboard="Numeric"
+                                               HorizontalTextAlignment="Center" />
+                                        <Entry Grid.Column="1"
+                                               Text="{Binding YText}"
+                                               Placeholder="y"
+                                               Keyboard="Numeric"
+                                               HorizontalTextAlignment="Center" />
+                                        <Button Grid.Column="2"
+                                                Text="✕"
+                                                Command="{Binding DeleteCommand}"
+                                                Style="{StaticResource DangerBtn}"
+                                                HeightRequest="38"
+                                                WidthRequest="38" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <!-- Node action buttons -->
+                        <HorizontalStackLayout Spacing="8">
+                            <Button Text="+ Вузол"
+                                    Command="{Binding AddNodeCommand}"
+                                    Style="{StaticResource PrimaryBtn}" />
+                            <Button Text="📂 Завантажити з файлу"
+                                    Command="{Binding LoadFileCommand}"
+                                    Style="{StaticResource SecondaryBtn}" />
+                        </HorizontalStackLayout>
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ─ Method selection card ───────────────────────── -->
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="Методи інтерполяції"
+                               Style="{StaticResource SectionLabel}" />
+                        <FlexLayout Wrap="Wrap" Direction="Row">
+                            <HorizontalStackLayout Spacing="6" Margin="0,0,20,4">
+                                <CheckBox IsChecked="{Binding UseLagrange}" Color="{StaticResource Primary}" />
+                                <Label Text="Метод Лагранжа" VerticalOptions="Center"
+                                       Style="{StaticResource BodyLabel}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Spacing="6" Margin="0,0,20,4">
+                                <CheckBox IsChecked="{Binding UseBarycentric}" Color="#D32F2F" />
+                                <Label Text="Барицентричний" VerticalOptions="Center"
+                                       Style="{StaticResource BodyLabel}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Spacing="6" Margin="0,0,0,4">
+                                <CheckBox IsChecked="{Binding UseAitken}" Color="#2E7D32" />
+                                <Label Text="Схема Ейткена" VerticalOptions="Center"
+                                       Style="{StaticResource BodyLabel}" />
+                            </HorizontalStackLayout>
+                        </FlexLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ─ Evaluation point + Compute ─────────────────── -->
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Обчислення P(x)" Style="{StaticResource SectionLabel}" />
+                        <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                            <Label Text="x =" VerticalOptions="Center"
+                                   Style="{StaticResource BodyLabel}" />
+                            <Entry Text="{Binding PointX}"
+                                   WidthRequest="120"
+                                   Keyboard="Numeric"
+                                   Placeholder="напр. 1.5" />
+                            <Button Text="▶  Обчислити"
+                                    Command="{Binding ComputeCommand}"
+                                    Style="{StaticResource PrimaryBtn}"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertBool}}" />
+                            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                              IsVisible="{Binding IsBusy}"
+                                              Color="{StaticResource Primary}"
+                                              WidthRequest="24" HeightRequest="24" />
+                        </HorizontalStackLayout>
+
+                        <!-- Status message -->
+                        <Label Text="{Binding StatusMessage}"
+                               Style="{StaticResource BodyLabel}"
+                               TextColor="{StaticResource Primary}"
+                               IsVisible="{Binding StatusMessage, Converter={StaticResource NotEmpty}}" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ─ Results table ───────────────────────────────── -->
+                <Border Style="{StaticResource Card}"
+                        IsVisible="{Binding Results.Count, Converter={StaticResource NotZero}}">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Результати" Style="{StaticResource SectionLabel}" />
+
+                        <!-- Table header -->
+                        <Grid ColumnDefinitions="*,*,*" BackgroundColor="{StaticResource Primary}"
+                              Padding="8,4">
+                            <Label Grid.Column="0" Text="Метод"     TextColor="White" FontAttributes="Bold" FontSize="12"/>
+                            <Label Grid.Column="1" Text="P(x)"      TextColor="White" FontAttributes="Bold" FontSize="12"/>
+                            <Label Grid.Column="2" Text="Час"       TextColor="White" FontAttributes="Bold" FontSize="12"/>
+                        </Grid>
+
+                        <CollectionView ItemsSource="{Binding Results}" SelectionMode="None"
+                                        HeightRequest="160">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:ComputeResultItem">
+                                    <Grid ColumnDefinitions="*,*,*" Padding="8,6">
+                                        <Label Grid.Column="0" Text="{Binding MethodName}"
+                                               Style="{StaticResource BodyLabel}" FontAttributes="Bold"/>
+                                        <Label Grid.Column="1" Text="{Binding Value}"
+                                               Style="{StaticResource BodyLabel}" FontFamily="Courier New"/>
+                                        <Label Grid.Column="2" Text="{Binding TimeUs}"
+                                               Style="{StaticResource MutedLabel}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ─ Polynomial expression — Lagrange product form ─ -->
+                <Border Style="{StaticResource Card}" IsVisible="{Binding ShowExpression}">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Аналітичний вираз — форма Лагранжа  (x−xᵢ)/(xⱼ−xᵢ)"
+                               Style="{StaticResource SectionLabel}" />
+                        <ScrollView Orientation="Horizontal">
+                            <Label Text="{Binding PolynomialExpression}"
+                                   FontFamily="Courier New"
+                                   FontSize="11"
+                                   TextColor="{StaticResource OnSurface}" />
+                        </ScrollView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ─ Polynomial expression — expanded standard form ─ -->
+                <Border Style="{StaticResource Card}" IsVisible="{Binding ShowExpression}">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Аналітичний вираз — многочленна форма  aₙ·xⁿ + … + a₁·x + a₀"
+                               Style="{StaticResource SectionLabel}" />
+                        <ScrollView Orientation="Horizontal">
+                            <Label Text="{Binding PolynomialExpandedExpression}"
+                                   FontFamily="Courier New"
+                                   FontSize="11"
+                                   TextColor="{StaticResource OnSurface}" />
+                        </ScrollView>
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ── Bottom status bar ──────────────────────────────────── -->
+        <Label Grid.Row="2"
+               Text="КПІ ім. Сікорського · Кафедра ІПІ · Курсова робота 2026"
+               Style="{StaticResource MutedLabel}"
+               HorizontalTextAlignment="Center"
+               Margin="0,4,0,0" />
+    </Grid>
+
+</ContentPage>
