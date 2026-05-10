@@ -40,16 +40,16 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Install MAUI workload
-        run: sudo dotnet workload install maui
+        run: dotnet workload install maui
 
-      - name: Build
-        run: dotnet build -f net9.0-maccatalyst -c Release
+      - name: Publish
+        run: dotnet publish -f net9.0-maccatalyst -c Release
 
       - name: Zip .app bundle
         run: |
-          ditto -c -k --sequesterRsrc --keepParent \
-            "bin/Release/net9.0-maccatalyst/InterpolationApp.app" \
-            InterpolationApp-macos.zip
+          APP=$(find bin -name "InterpolationApp.app" -type d | head -1)
+          echo "Bundling: $APP"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" InterpolationApp-macos.zip
 
       - uses: actions/upload-artifact@v4
         with:
