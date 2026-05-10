@@ -17,6 +17,8 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
 
+    <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+
     <ApplicationTitle>InterpolationApp</ApplicationTitle>
     <ApplicationId>com.kpi.interpolation</ApplicationId>
     <ApplicationVersion>1</ApplicationVersion>
