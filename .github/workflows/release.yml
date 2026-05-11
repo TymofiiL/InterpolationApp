@@ -31,28 +31,41 @@ jobs:
           path: InterpolationApp-windows.zip
 
   build-macos:
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
-
-      - name: Select Xcode 14.3
-        run: sudo xcode-select -s /Applications/Xcode_14.3.1.app/Contents/Developer
+          dotnet-version: '9.0.x'
 
       - name: Install MAUI workload
         run: dotnet workload install maui
 
-      - name: Publish
-        run: dotnet publish -f net8.0-maccatalyst -c Release
+      - name: Publish arm64
+        run: dotnet publish -f net9.0-maccatalyst -r maccatalyst-arm64 -c Release
+
+      - name: Publish x64
+        run: dotnet publish -f net9.0-maccatalyst -r maccatalyst-x64 -c Release
+
+      - name: Create universal binary
+        run: |
+          ARM64=$(find bin -path "*arm64*" -name "InterpolationApp.app" -type d | head -1)
+          X64=$(find bin -path "*x64*" -name "InterpolationApp.app" -type d | head -1)
+          echo "arm64: $ARM64"
+          echo "x64:   $X64"
+          ditto "$ARM64" InterpolationApp.app
+          lipo "$ARM64/Contents/MacOS/InterpolationApp" \
+               "$X64/Contents/MacOS/InterpolationApp" \
+               -create -output InterpolationApp.app/Contents/MacOS/InterpolationApp
+          find "$ARM64" -name "*.dylib" | while read f; do
+            rel="${f#$ARM64/}"
+            x64f="$X64/$rel"
+            [ -f "$x64f" ] && lipo "$f" "$x64f" -create -output "InterpolationApp.app/$rel"
+          done
 
       - name: Zip .app bundle
-        run: |
-          APP=$(find bin -name "InterpolationApp.app" -type d | head -1)
-          echo "Bundling: $APP"
-          ditto -c -k --sequesterRsrc --keepParent "$APP" InterpolationApp-macos.zip
+        run: ditto -c -k --sequesterRsrc --keepParent InterpolationApp.app InterpolationApp-macos.zip
 
       - uses: actions/upload-artifact@v4
         with:
