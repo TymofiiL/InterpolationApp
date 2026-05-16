@@ -21,14 +21,17 @@
 
     <ApplicationTitle>InterpolationApp</ApplicationTitle>
     <ApplicationId>com.kpi.interpolation</ApplicationId>
-    <ApplicationVersion>1</ApplicationVersion>
-    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>3</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.3</ApplicationDisplayVersion>
   </PropertyGroup>
 
   <!-- Windows-only settings -->
   <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
     <WindowsPackageType>None</WindowsPackageType>
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <!-- Bundle WinAppSDK DLLs so CoreMessagingXP.dll and friends are present
+         without requiring the Windows App Runtime to be pre-installed. -->
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
   <!-- macOS (Mac Catalyst) settings -->
