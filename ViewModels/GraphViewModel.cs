@@ -77,22 +77,25 @@ public sealed partial class GraphViewModel : ObservableObject
     {
         StatusMessage = string.Empty;
 
-        if (!_state.TryGetData(out var data))
+        if (!_state.TryGetData(out var data, out string dataError))
         {
-            StatusMessage = "Помилка: деякі поля вузлів містять некоректні числа.";
+            StatusMessage = $"Помилка: {dataError}";
             return;
         }
 
-        var vr = DataManager.ValidateData(data);
-        if (!vr.IsValid)
+        if (!ParseDouble(RangeA, out double a, out string errA))
         {
-            StatusMessage = $"Помилка: {vr.Message}";
+            StatusMessage = $"Помилка: ліва межа a — {errA}";
             return;
         }
-
-        if (!ParseDouble(RangeA, out double a) || !ParseDouble(RangeB, out double b) || a >= b)
+        if (!ParseDouble(RangeB, out double b, out string errB))
         {
-            StatusMessage = "Помилка: некоректний діапазон [a, b]. Перевірте, що a < b.";
+            StatusMessage = $"Помилка: права межа b — {errB}";
+            return;
+        }
+        if (a >= b)
+        {
+            StatusMessage = "Помилка: ліва межа a має бути строго менше правої межі b.";
             return;
         }
 
@@ -109,9 +112,17 @@ public sealed partial class GraphViewModel : ObservableObject
             return;
         }
 
+        string? validationError = null;
         var series = new List<PlotSeries>();
         await Task.Run(() =>
         {
+            var vr = DataManager.ValidateData(data);
+            if (!vr.IsValid)
+            {
+                validationError = vr.Message;
+                return;
+            }
+
             double step = (b - a) / (pts - 1);
             double[] xs = Enumerable.Range(0, pts).Select(i => a + i * step).ToArray();
 
@@ -127,6 +138,19 @@ public sealed partial class GraphViewModel : ObservableObject
                 });
             }
         });
+
+        if (validationError is not null)
+        {
+            StatusMessage = $"Помилка: {validationError}";
+            return;
+        }
+
+        if (series.Any(s => s.Ys.Any(y => !double.IsFinite(y))))
+        {
+            StatusMessage = "Помилка: обчислені значення виходять за межі числа з рухомою крапкою " +
+                            "подвійної точності — спробуйте менші значення вузлів або звузіть діапазон.";
+            return;
+        }
 
         Drawable.Series = series;
         Drawable.NodePoints = data.Xs.Zip(data.Ys).Select(p => (p.First, p.Second)).ToList();
@@ -186,7 +210,23 @@ public sealed partial class GraphViewModel : ObservableObject
         }
     }
 
-    private static bool ParseDouble(string s, out double v) =>
-        double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out v) ||
-        double.TryParse(s.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out v);
+    private static bool ParseDouble(string s, out double v, out string error)
+    {
+        var style = NumberStyles.Any;
+        var culture = CultureInfo.InvariantCulture;
+        bool parsed = double.TryParse(s, style, culture, out v) ||
+                      double.TryParse(s.Replace(',', '.'), style, culture, out v);
+        if (!parsed)
+        {
+            error = "не є числом — введіть числове значення.";
+            return false;
+        }
+        if (!double.IsFinite(v))
+        {
+            error = "виходить за межі допустимого діапазону (~±1.8·10³⁰⁸). Введіть менше число.";
+            return false;
+        }
+        error = string.Empty;
+        return true;
+    }
 }

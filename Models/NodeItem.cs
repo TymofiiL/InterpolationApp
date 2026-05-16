@@ -44,9 +44,29 @@ public sealed partial class NodeItem : ObservableObject
         var culture = CultureInfo.InvariantCulture;
 
         bool ok = double.TryParse(XText, style, culture, out x) &&
-                  double.TryParse(YText, style, culture, out y);
+                  double.TryParse(YText, style, culture, out y) &&
+                  double.IsFinite(x) && double.IsFinite(y);
 
         // Also accept comma as decimal separator
+        if (!ok)
+        {
+            ok = double.TryParse(XText.Replace(',', '.'), style, culture, out x) &&
+                 double.TryParse(YText.Replace(',', '.'), style, culture, out y) &&
+                 double.IsFinite(x) && double.IsFinite(y);
+        }
+        return ok;
+    }
+
+    // Parses without the IsFinite check so callers can distinguish
+    // "non-numeric text" from "numeric but out-of-range" failures.
+    internal bool TryGetRawValues(out double x, out double y)
+    {
+        x = 0; y = 0;
+        var style = NumberStyles.Any;
+        var culture = CultureInfo.InvariantCulture;
+
+        bool ok = double.TryParse(XText, style, culture, out x) &&
+                  double.TryParse(YText, style, culture, out y);
         if (!ok)
         {
             ok = double.TryParse(XText.Replace(',', '.'), style, culture, out x) &&

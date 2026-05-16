@@ -38,8 +38,9 @@ public sealed partial class InterpolationStateService : ObservableObject
         }
     }
 
-    public bool TryGetData(out InterpolationData data)
+    public bool TryGetData(out InterpolationData data, out string error)
     {
+        error = string.Empty;
         var xs = new List<double>(Nodes.Count);
         var ys = new List<double>(Nodes.Count);
 
@@ -47,6 +48,10 @@ public sealed partial class InterpolationStateService : ObservableObject
         {
             if (!node.TryGetValues(out double x, out double y))
             {
+                error = node.TryGetRawValues(out _, out _)
+                    ? "введене значення вузла виходить за межі допустимого діапазону (~±1.8·10³⁰⁸). " +
+                      "Введіть менше число."
+                    : "деякі поля вузлів містять некоректні символи — введіть числові значення.";
                 data = new InterpolationData();
                 return false;
             }

@@ -12,6 +12,9 @@ public sealed partial class ComputeViewModel : ObservableObject
 {
     private readonly InterpolationStateService _state;
     private readonly DataManager _dm;
+#if MACCATALYST
+    private bool _pickerWasShownBefore;
+#endif
 
     public ComputeViewModel(InterpolationStateService state, DataManager dm)
     {
@@ -75,6 +78,11 @@ public sealed partial class ComputeViewModel : ObservableObject
     [RelayCommand]
     private void AddNode()
     {
+        if (_state.Nodes.Count >= DataManager.MaxNodes)
+        {
+            StatusMessage = $"Досягнуто максимум {DataManager.MaxNodes:N0} вузлів.";
+            return;
+        }
         _state.Nodes.Add(new NodeItem(_state.Nodes));
         _state.InvalidateCaches();
     }
@@ -82,27 +90,39 @@ public sealed partial class ComputeViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadFile()
     {
+#if MACCATALYST
+        // UIDocumentPickerViewController dismissal animation takes ~300 ms on Mac Catalyst.
+        // Calling FilePicker again before it finishes returns null silently.
+        if (_pickerWasShownBefore)
+            await Task.Delay(500);
+        _pickerWasShownBefore = true;
+#endif
+        var picked = await FilePicker.PickAsync(new PickOptions
+        {
+            PickerTitle = "Виберіть файл з вузлами інтерполяції (TXT)",
+            FileTypes = new FilePickerFileType(
+                new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    [DevicePlatform.WinUI] = new[] { ".txt" },
+                    [DevicePlatform.MacCatalyst] = new[] { "public.plain-text" },
+                    [DevicePlatform.iOS] = new[] { "public.plain-text" },
+                })
+        });
+
+        if (picked is null)
+            return;
+
+        IsBusy = true;
         try
         {
-            var result = await FilePicker.PickAsync(new PickOptions
+            // Parse and validate on a background thread — file I/O and the
+            // O(n²) duplicate check must not block the UI thread.
+            var (data, vr) = await Task.Run(() =>
             {
-                PickerTitle = "Виберіть файл з вузлами інтерполяції (TXT)",
-                FileTypes = new FilePickerFileType(
-                    new Dictionary<DevicePlatform, IEnumerable<string>>
-                    {
-                        [DevicePlatform.WinUI] = new[] { ".txt" },
-                        [DevicePlatform.MacCatalyst] = new[] { "public.plain-text" },
-                        [DevicePlatform.iOS] = new[] { "public.plain-text" },
-                    })
+                var d = _dm.LoadFromFile(picked.FullPath);
+                return (d, DataManager.ValidateData(d));
             });
 
-            if (result is null)
-            {
-                return;
-            }
-
-            var data = _dm.LoadFromFile(result.FullPath);
-            var vr = DataManager.ValidateData(data);
             if (!vr.IsValid)
             {
                 StatusMessage = $"Помилка: {vr.Message}";
@@ -111,15 +131,18 @@ public sealed partial class ComputeViewModel : ObservableObject
 
             _state.Nodes.Clear();
             for (int i = 0; i < data.Count; i++)
-            {
                 _state.Nodes.Add(new NodeItem(_state.Nodes, data.Xs[i], data.Ys[i]));
-            }
+
             _state.InvalidateCaches();
-            StatusMessage = $"Завантажено {data.Count} вузлів з «{result.FileName}».";
+            StatusMessage = $"Завантажено {data.Count} вузлів з «{picked.FileName}».";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Помилка завантаження: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 
@@ -132,25 +155,15 @@ public sealed partial class ComputeViewModel : ObservableObject
         ShowExpression = false;
         Results = new ObservableCollection<ComputeResultItem>();
 
-        if (!_state.TryGetData(out var data))
+        if (!_state.TryGetData(out var data, out string dataError))
         {
-            StatusMessage = "Помилка: деякі поля містять некоректні числа.";
+            StatusMessage = $"Помилка: {dataError}";
             return;
         }
 
-        var vr = DataManager.ValidateData(data);
-        if (!vr.IsValid)
+        if (!TryParsePoint(PointX, out double x, out string pointError))
         {
-            StatusMessage = $"Помилка: {vr.Message}";
-            return;
-        }
-
-        if (!double.TryParse(PointX,
-                NumberStyles.Any, CultureInfo.InvariantCulture, out double x) &&
-            !double.TryParse(PointX.Replace(',', '.'),
-                NumberStyles.Any, CultureInfo.InvariantCulture, out x))
-        {
-            StatusMessage = "Помилка: некоректне значення точки x.";
+            StatusMessage = $"Помилка: {pointError}";
             return;
         }
 
@@ -164,44 +177,36 @@ public sealed partial class ComputeViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var newItems = new List<ComputeResultItem>();
-            string newExpr = string.Empty;
-            string newExpandedExpr = string.Empty;
-            bool showExpr = false;
-
-            await Task.Run(() =>
+            var result = await Task.Run(() =>
             {
-                foreach (var interp in interpolators)
-                {
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-                    double val = interp.Compute(data.Xs, data.Ys, x);
-                    sw.Stop();
-
-                    newItems.Add(new ComputeResultItem
-                    {
-                        MethodName = interp.Name,
-                        Value = val.ToString("G10"),
-                        TimeUs = sw.Elapsed.TotalMicroseconds.ToString("F2") + " мкс"
-                    });
-
-                    if (interp is LagrangeInterpolator)
-                    {
-                        newExpr = LagrangeInterpolator.BuildPolynomialExpression(data.Xs, data.Ys);
-                        newExpandedExpr = LagrangeInterpolator.BuildExpandedPolynomialExpression(data.Xs, data.Ys);
-                        showExpr = true;
-                    }
-                }
+                var vr = DataManager.ValidateData(data);
+                if (!vr.IsValid)
+                    return (Items: (List<ComputeResultItem>?)null, Message: vr.Message,
+                            Expr: string.Empty, ExpandedExpr: string.Empty,
+                            ShowExpr: false, HasNonFinite: false);
+                var r = RunInterpolators(interpolators, data.Xs, data.Ys, x);
+                return (Items: (List<ComputeResultItem>?)r.Items, Message: string.Empty,
+                        r.Expr, r.ExpandedExpr, r.ShowExpr, r.HasNonFinite);
             });
 
-            Results = new ObservableCollection<ComputeResultItem>(newItems);
+            if (result.Items is null)
+            {
+                StatusMessage = $"Помилка: {result.Message}";
+                return;
+            }
 
-            PolynomialExpression = newExpr;
-            PolynomialExpandedExpression = newExpandedExpr;
-            ShowExpression = showExpr;
+            if (result.HasNonFinite)
+            {
+                StatusMessage = "Помилка: результат виходить за межі числа з рухомою крапкою подвійної " +
+                                "точності — спробуйте менші значення вузлів або точки обчислення.";
+                return;
+            }
 
-            StatusMessage = Results.Count > 0
-                ? $"Обчислено. P({x:G5}) = {Results[0].Value}"
-                : "Немає вибраних методів.";
+            Results = new ObservableCollection<ComputeResultItem>(result.Items);
+            PolynomialExpression = result.Expr;
+            PolynomialExpandedExpression = result.ExpandedExpr;
+            ShowExpression = result.ShowExpr;
+            StatusMessage = $"Обчислено. P({x:G5}) = {Results[0].Value}";
         }
         catch (Exception ex)
         {
@@ -211,5 +216,61 @@ public sealed partial class ComputeViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    private static bool TryParsePoint(string s, out double v, out string error)
+    {
+        var style = NumberStyles.Any;
+        var culture = CultureInfo.InvariantCulture;
+        bool parsed = double.TryParse(s, style, culture, out v) ||
+                      double.TryParse(s.Replace(',', '.'), style, culture, out v);
+        if (!parsed)
+        {
+            error = "точка обчислення x не є числом — введіть числове значення.";
+            return false;
+        }
+        if (!double.IsFinite(v))
+        {
+            error = "значення точки x виходить за межі допустимого діапазону (~±1.8·10³⁰⁸). " +
+                    "Введіть менше число.";
+            return false;
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private static (List<ComputeResultItem> Items, string Expr, string ExpandedExpr, bool ShowExpr, bool HasNonFinite)
+        RunInterpolators(List<InterpolatorBase> interpolators, double[] xs, double[] ys, double x)
+    {
+        var items = new List<ComputeResultItem>();
+        string expr = string.Empty;
+        string expandedExpr = string.Empty;
+        bool showExpr = false;
+        bool hasNonFinite = false;
+
+        foreach (var interp in interpolators)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            double val = interp.Compute(xs, ys, x);
+            sw.Stop();
+
+            if (!double.IsFinite(val)) hasNonFinite = true;
+
+            items.Add(new ComputeResultItem
+            {
+                MethodName = interp.Name,
+                Value = val.ToString("G10"),
+                TimeUs = sw.Elapsed.TotalMicroseconds.ToString("F2") + " мкс"
+            });
+
+            if (interp is LagrangeInterpolator)
+            {
+                expr = LagrangeInterpolator.BuildPolynomialExpression(xs, ys);
+                expandedExpr = LagrangeInterpolator.BuildExpandedPolynomialExpression(xs, ys);
+                showExpr = true;
+            }
+        }
+
+        return (items, expr, expandedExpr, showExpr, hasNonFinite);
     }
 }

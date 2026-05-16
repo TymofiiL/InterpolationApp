@@ -60,7 +60,8 @@ public sealed class BarycentricInterpolator : InterpolatorBase
             num += t * ys[i];
             denom += t;
         }
-        return num / denom;
+        // + 0.0 normalizes IEEE 754 -0.0 to +0.0 (e.g. when all y_i = 0)
+        return num / denom + 0.0;
     }
 
     // ── Weight computation O(n²) ───────────────────────────────────────
