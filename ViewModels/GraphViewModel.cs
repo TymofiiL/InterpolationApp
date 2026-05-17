@@ -145,19 +145,22 @@ public sealed partial class GraphViewModel : ObservableObject
             return;
         }
 
-        if (series.Any(s => s.Ys.Any(y => !double.IsFinite(y))))
-        {
-            StatusMessage = "Помилка: обчислені значення виходять за межі числа з рухомою крапкою " +
-                            "подвійної точності — спробуйте менші значення вузлів або звузіть діапазон.";
-            return;
-        }
-
         Drawable.Series = series;
         Drawable.NodePoints = data.Xs.Zip(data.Ys).Select(p => (p.First, p.Second)).ToList();
         Drawable.ResetView();
 
         _messenger.Send(new InvalidateChartMessage());
-        StatusMessage = $"Графік побудовано: {series.Count} метод(и), {pts} точок.";
+
+        int nonFiniteCount = series.Sum(s => s.Ys.Count(y => !double.IsFinite(y)));
+        if (nonFiniteCount > 0)
+        {
+            StatusMessage = $"Графік побудовано ({series.Count} метод(и), {pts} точок). " +
+                            $"Увага: {nonFiniteCount} значень виходять за межі — показано частково.";
+        }
+        else
+        {
+            StatusMessage = $"Графік побудовано: {series.Count} метод(и), {pts} точок.";
+        }
     }
 
     [RelayCommand]

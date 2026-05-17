@@ -29,7 +29,9 @@ public sealed class AitkenInterpolator : InterpolatorBase
     {
         int n = xs.Length;
         if (n == 1)
+        {
             return ys[0];
+        }
 
         // Work array, initially a copy of y values (level 0 of Aitken table)
         double[] table = (double[])ys.Clone();

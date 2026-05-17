@@ -180,12 +180,32 @@
                 <!-- ─ Polynomial expression — Lagrange product form ─ -->
                 <Border Style="{StaticResource Card}" IsVisible="{Binding ShowExpression}">
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Аналітичний вираз — форма Лагранжа  (x−xᵢ)/(xⱼ−xᵢ)"
-                               Style="{StaticResource SectionLabel}" />
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                            <Label Grid.Column="0"
+                                   Text="Аналітичний вираз — форма Лагранжа  (x−xᵢ)/(xⱼ−xᵢ)"
+                                   Style="{StaticResource SectionLabel}"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Column="1"
+                                    Text="{Binding CopyExpressionLabel}"
+                                    Command="{Binding CopyExpressionCommand}"
+                                    Style="{StaticResource SecondaryBtn}"
+                                    FontSize="11"
+                                    HeightRequest="30"
+                                    Padding="8,0">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button"
+                                                 Binding="{Binding CopyExpressionLabel}"
+                                                 Value="Скопійовано">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Grid>
                         <ScrollView Orientation="Horizontal">
                             <Label Text="{Binding PolynomialExpression}"
                                    FontFamily="Courier New"
                                    FontSize="11"
+                                   Margin="0,0,0,14"
                                    TextColor="{StaticResource OnSurface}" />
                         </ScrollView>
                     </VerticalStackLayout>
@@ -194,12 +214,32 @@
                 <!-- ─ Polynomial expression — expanded standard form ─ -->
                 <Border Style="{StaticResource Card}" IsVisible="{Binding ShowExpression}">
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Аналітичний вираз — многочленна форма  aₙ·xⁿ + … + a₁·x + a₀"
-                               Style="{StaticResource SectionLabel}" />
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
+                            <Label Grid.Column="0"
+                                   Text="Аналітичний вираз — многочленна форма  aₙ·xⁿ + … + a₁·x + a₀"
+                                   Style="{StaticResource SectionLabel}"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Column="1"
+                                    Text="{Binding CopyExpandedExpressionLabel}"
+                                    Command="{Binding CopyExpandedExpressionCommand}"
+                                    Style="{StaticResource SecondaryBtn}"
+                                    FontSize="11"
+                                    HeightRequest="30"
+                                    Padding="8,0">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button"
+                                                 Binding="{Binding CopyExpandedExpressionLabel}"
+                                                 Value="Скопійовано">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Grid>
                         <ScrollView Orientation="Horizontal">
                             <Label Text="{Binding PolynomialExpandedExpression}"
                                    FontFamily="Courier New"
                                    FontSize="11"
+                                   Margin="0,0,0,14"
                                    TextColor="{StaticResource OnSurface}" />
                         </ScrollView>
                     </VerticalStackLayout>

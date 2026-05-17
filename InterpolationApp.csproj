@@ -21,8 +21,8 @@
 
     <ApplicationTitle>InterpolationApp</ApplicationTitle>
     <ApplicationId>com.kpi.interpolation</ApplicationId>
-    <ApplicationVersion>3</ApplicationVersion>
-    <ApplicationDisplayVersion>1.0.3</ApplicationDisplayVersion>
+    <ApplicationVersion>4</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.4</ApplicationDisplayVersion>
   </PropertyGroup>
 
   <!-- Windows-only settings -->

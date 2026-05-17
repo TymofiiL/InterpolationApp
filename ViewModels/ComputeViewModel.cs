@@ -72,6 +72,10 @@ public sealed partial class ComputeViewModel : ObservableObject
     [ObservableProperty] private string _polynomialExpandedExpression = string.Empty;
     [ObservableProperty] private bool _showExpression;
     [ObservableProperty] private bool _isBusy;
+    private const string LabelCopy = "Копіювати";
+    private const string LabelCopied = "Скопійовано";
+    [ObservableProperty] private string _copyExpressionLabel = LabelCopy;
+    [ObservableProperty] private string _copyExpandedExpressionLabel = LabelCopy;
 
     [ObservableProperty] private ObservableCollection<ComputeResultItem> _results = new();
 
@@ -94,7 +98,9 @@ public sealed partial class ComputeViewModel : ObservableObject
         // UIDocumentPickerViewController dismissal animation takes ~300 ms on Mac Catalyst.
         // Calling FilePicker again before it finishes returns null silently.
         if (_pickerWasShownBefore)
+        {
             await Task.Delay(500);
+        }
         _pickerWasShownBefore = true;
 #endif
         var picked = await FilePicker.PickAsync(new PickOptions
@@ -110,7 +116,9 @@ public sealed partial class ComputeViewModel : ObservableObject
         });
 
         if (picked is null)
+        {
             return;
+        }
 
         IsBusy = true;
         try
@@ -131,7 +139,9 @@ public sealed partial class ComputeViewModel : ObservableObject
 
             _state.Nodes.Clear();
             for (int i = 0; i < data.Count; i++)
+            {
                 _state.Nodes.Add(new NodeItem(_state.Nodes, data.Xs[i], data.Ys[i]));
+            }
 
             _state.InvalidateCaches();
             StatusMessage = $"Завантажено {data.Count} вузлів з «{picked.FileName}».";
@@ -154,6 +164,8 @@ public sealed partial class ComputeViewModel : ObservableObject
         PolynomialExpandedExpression = string.Empty;
         ShowExpression = false;
         Results = new ObservableCollection<ComputeResultItem>();
+        CopyExpressionLabel = LabelCopy;
+        CopyExpandedExpressionLabel = LabelCopy;
 
         if (!_state.TryGetData(out var data, out string dataError))
         {
@@ -181,9 +193,11 @@ public sealed partial class ComputeViewModel : ObservableObject
             {
                 var vr = DataManager.ValidateData(data);
                 if (!vr.IsValid)
+                {
                     return (Items: (List<ComputeResultItem>?)null, Message: vr.Message,
                             Expr: string.Empty, ExpandedExpr: string.Empty,
                             ShowExpr: false, HasNonFinite: false);
+                }
                 var r = RunInterpolators(interpolators, data.Xs, data.Ys, x);
                 return (Items: (List<ComputeResultItem>?)r.Items, Message: string.Empty,
                         r.Expr, r.ExpandedExpr, r.ShowExpr, r.HasNonFinite);
@@ -195,6 +209,12 @@ public sealed partial class ComputeViewModel : ObservableObject
                 return;
             }
 
+            // Polynomial expression depends only on the nodes, not on the evaluation
+            // point — show it even when the numerical result overflows.
+            PolynomialExpression = result.Expr;
+            PolynomialExpandedExpression = result.ExpandedExpr;
+            ShowExpression = result.ShowExpr;
+
             if (result.HasNonFinite)
             {
                 StatusMessage = "Помилка: результат виходить за межі числа з рухомою крапкою подвійної " +
@@ -203,9 +223,6 @@ public sealed partial class ComputeViewModel : ObservableObject
             }
 
             Results = new ObservableCollection<ComputeResultItem>(result.Items);
-            PolynomialExpression = result.Expr;
-            PolynomialExpandedExpression = result.ExpandedExpr;
-            ShowExpression = result.ShowExpr;
             StatusMessage = $"Обчислено. P({x:G5}) = {Results[0].Value}";
         }
         catch (Exception ex)
@@ -254,7 +271,10 @@ public sealed partial class ComputeViewModel : ObservableObject
             double val = interp.Compute(xs, ys, x);
             sw.Stop();
 
-            if (!double.IsFinite(val)) hasNonFinite = true;
+            if (!double.IsFinite(val))
+            {
+                hasNonFinite = true;
+            }
 
             items.Add(new ComputeResultItem
             {
@@ -272,5 +292,23 @@ public sealed partial class ComputeViewModel : ObservableObject
         }
 
         return (items, expr, expandedExpr, showExpr, hasNonFinite);
+    }
+
+    [RelayCommand]
+    private async Task CopyExpression()
+    {
+        await Clipboard.SetTextAsync(PolynomialExpression);
+        CopyExpressionLabel = LabelCopied;
+        await Task.Delay(2000);
+        CopyExpressionLabel = LabelCopy;
+    }
+
+    [RelayCommand]
+    private async Task CopyExpandedExpression()
+    {
+        await Clipboard.SetTextAsync(PolynomialExpandedExpression);
+        CopyExpandedExpressionLabel = LabelCopied;
+        await Task.Delay(2000);
+        CopyExpandedExpressionLabel = LabelCopy;
     }
 }

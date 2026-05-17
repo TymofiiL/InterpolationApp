@@ -27,16 +27,22 @@ public sealed class DataManager
         {
             string line = rawLine.Trim();
             if (string.IsNullOrEmpty(line) || line.StartsWith('#'))
+            {
                 continue;
+            }
 
             // Try without comma first so "0,5 0,25" stays as two tokens ["0,5","0,25"]
             // rather than splitting into four. Fall back to comma as separator only when
             // no other delimiter is present (e.g. "0.5,0.25").
             string[] parts = line.Split(FieldSeparators, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 2)
+            {
                 parts = line.Split(AllSeparators, StringSplitOptions.RemoveEmptyEntries);
+            }
             if (parts.Length < 2)
+            {
                 continue;
+            }
 
             string xStr = parts[0].Replace(',', '.');
             string yStr = parts[1].Replace(',', '.');
@@ -45,11 +51,13 @@ public sealed class DataManager
                 double.TryParse(yStr, style, culture, out double yi))
             {
                 if (xs.Count >= MaxNodes)
+                {
                     throw new InvalidDataException(
                         $"Файл містить більше {MaxNodes:N0} вузлів. " +
                         $"Поліноміальна інтерполяція з такою кількістю точок є чисельно " +
                         $"нестабільною і надмірно повільною. " +
                         $"Скоротіть файл до {MaxNodes:N0} вузлів або менше.");
+                }
 
                 xs.Add(xi);
                 ys.Add(yi);
@@ -57,9 +65,11 @@ public sealed class DataManager
         }
 
         if (xs.Count == 0)
+        {
             throw new InvalidDataException(
                 "Файл не містить жодного коректного рядка даних.\n" +
                 "Формат: «x y» (по одному вузлу на рядок).");
+        }
 
         return new InterpolationData { Xs = xs.ToArray(), Ys = ys.ToArray() };
     }
@@ -79,8 +89,10 @@ public sealed class DataManager
         for (int i = 0; i < data.Xs.Length; i++)
         {
             if (!double.IsFinite(data.Xs[i]) || !double.IsFinite(data.Ys[i]))
+            {
                 return ValidationResult.Fail(
                     $"Вузол [{i}]: x={data.Xs[i]}, y={data.Ys[i]} — значення має бути скінченним числом.");
+            }
         }
 
         for (int i = 0; i < data.Xs.Length - 1; i++)
